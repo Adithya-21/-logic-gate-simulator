@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Logic Gate Simulator</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <span class="nav-brand">⚡ Logic Gate Simulator</span>
+    <div class="nav-right">
+      <span class="nav-user">👤 {{ username }}</span>
+      <a href="/logout" class="logout-btn">Logout →</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>⚡ Logic Gate Simulator</h1>
+    <p class="subtitle">ECE Project | VLSI & Digital Logic</p>
+
+    <!-- Gate Selector -->
+    <div class="card">
+      <h2>Select Gate</h2>
+      <div class="gate-buttons">
+        <button onclick="selectGate('AND')"  class="gate-btn">AND</button>
+        <button onclick="selectGate('OR')"   class="gate-btn">OR</button>
+        <button onclick="selectGate('NOT')"  class="gate-btn">NOT</button>
+        <button onclick="selectGate('NAND')" class="gate-btn">NAND</button>
+        <button onclick="selectGate('NOR')"  class="gate-btn">NOR</button>
+        <button onclick="selectGate('XOR')"  class="gate-btn">XOR</button>
+        <button onclick="selectGate('XNOR')" class="gate-btn">XNOR</button>
+      </div>
+    </div>
+
+    <!-- Input Section -->
+    <div class="card" id="input-section">
+      <h2>Inputs for <span id="selected-gate-label">—</span></h2>
+      <div class="inputs">
+        <div class="input-group">
+          <label>Input A</label>
+          <div class="toggle-group">
+            <button onclick="setInput('a', 0)" id="a0" class="toggle active">0</button>
+            <button onclick="setInput('a', 1)" id="a1" class="toggle">1</button>
+          </div>
+        </div>
+        <div class="input-group" id="input-b-group">
+          <label>Input B</label>
+          <div class="toggle-group">
+            <button onclick="setInput('b', 0)" id="b0" class="toggle active">0</button>
+            <button onclick="setInput('b', 1)" id="b1" class="toggle">1</button>
+          </div>
+        </div>
+      </div>
+      <button onclick="simulate()" class="simulate-btn">▶ Simulate</button>
+    </div>
+
+    <!-- Output Section -->
+    <div class="card" id="output-section" style="display:none;">
+      <h2>Output</h2>
+      <div id="output-display" class="output-display"></div>
+      <canvas id="gateCanvas" width="300" height="160"></canvas>
+    </div>
+
+    <!-- Truth Table -->
+    <div class="card" id="truth-table-section" style="display:none;">
+      <h2>Truth Table</h2>
+      <div id="truth-table-container"></div>
+    </div>
+
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

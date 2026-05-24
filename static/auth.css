@@ -1,0 +1,254 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a14;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-card {
+  background: #12121f;
+  border: 1px solid #1e1e38;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 0 60px #7ee8fa08;
+}
+
+/* ── Top section ── */
+.auth-top {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-icon {
+  width: 60px;
+  height: 60px;
+  background: #0f2535;
+  border: 1px solid #7ee8fa33;
+  border-radius: 16px;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.auth-top h1 {
+  color: #7ee8fa;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.tagline {
+  color: #555;
+  font-size: 0.88rem;
+}
+
+/* ── Fields ── */
+.field-group {
+  margin-bottom: 18px;
+}
+
+.field-group label {
+  display: block;
+  color: #888;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+}
+
+.req {
+  color: #f85656;
+  margin-left: 2px;
+}
+
+/* ── Input wrapper ── */
+.inp-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inp-icon {
+  position: absolute;
+  left: 13px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.inp-wrap input {
+  width: 100%;
+  padding: 12px 42px;
+  background: #0d0d1c;
+  border: 1.5px solid #1e1e38;
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.inp-wrap input:focus {
+  border-color: #7ee8fa;
+  background: #0f0f24;
+}
+
+.inp-wrap input::placeholder {
+  color: #333;
+}
+
+/* ── Show/Hide password toggle ── */
+.eye-toggle {
+  position: absolute;
+  right: 13px;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 1;
+  color: #ffffff;
+  filter: brightness(2);
+  transition: opacity 0.2s;
+  user-select: none;
+  z-index: 2;
+}
+
+.eye-toggle:hover {
+  opacity: 0.7;
+}
+
+/* ── Phone row ── */
+.phone-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.country-code {
+  padding: 12px 14px;
+  background: #0d0d1c;
+  border: 1.5px solid #1e1e38;
+  border-radius: 10px;
+  color: #aaa;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.phone-row input {
+  flex: 1;
+  padding: 12px 14px;
+  background: #0d0d1c;
+  border: 1.5px solid #1e1e38;
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.phone-row input:focus {
+  border-color: #7ee8fa;
+  background: #0f0f24;
+}
+
+.phone-row input::placeholder {
+  color: #333;
+}
+
+/* ── Forgot password link ── */
+.forgot-row {
+  text-align: right;
+  margin: -8px 0 18px;
+}
+
+.forgot-row a {
+  color: #7ee8fa;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.forgot-row a:hover {
+  text-decoration: underline;
+}
+
+/* ── Submit button ── */
+.auth-btn {
+  width: 100%;
+  padding: 13px;
+  background: #7ee8fa;
+  color: #06060f;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.auth-btn:hover {
+  opacity: 0.9;
+}
+
+.auth-btn:active {
+  transform: scale(0.99);
+}
+
+/* ── Footer links ── */
+.auth-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.auth-footer a {
+  color: #7ee8fa;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── Error / Success boxes ── */
+.error-box {
+  background: #1f0a0a;
+  border: 1px solid #f8565644;
+  color: #f85656;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  display: none;
+}
+
+.success-box {
+  background: #0a1f12;
+  border: 1px solid #56f89c44;
+  color: #56f89c;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  display: none;
+}

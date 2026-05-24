@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register | Logic Gate Simulator</title>
+  <link rel="stylesheet" href="/static/auth.css"/>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+
+      <div class="auth-top">
+        <div class="auth-icon">🚀</div>
+        <h1>Create Account</h1>
+        <p class="tagline">Join Logic Gate Simulator</p>
+      </div>
+
+      <div class="error-box" id="error-box"></div>
+      <div class="success-box" id="success-box"></div>
+
+      <div class="field-group">
+        <label>Full Name <span class="req">*</span></label>
+        <div class="inp-wrap">
+          <span class="inp-icon">👤</span>
+          <input type="text" id="username" placeholder="Adithya Kumar" required/>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Email Address <span class="req">*</span></label>
+        <div class="inp-wrap">
+          <span class="inp-icon">✉</span>
+          <input type="email" id="email" placeholder="you@example.com" required/>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Phone Number <span class="req">*</span></label>
+        <div class="phone-row">
+          <div class="country-code">🇮🇳 +91</div>
+          <input type="tel" id="phone" placeholder="9876543210" maxlength="10" required/>
+        </div>
+      </div>
+
+      <div class="field-group">
+  <label>Password <span class="req">*</span></label>
+  <div class="inp-wrap">
+    <span class="inp-icon">🔒</span>
+    <input type="password" id="password" placeholder="Min 6 characters" required/>
+    <span class="eye-toggle" onclick="togglePassword('password', this)">👁</span>
+  </div>
+</div>
+
+      <div class="field-group">
+  <label>Secret Question: What is your best friend's name? <span class="req">*</span></label>
+  <div class="inp-wrap">
+    <span class="inp-icon">🔑</span>
+    <input type="text" id="secret_answer" placeholder="Your best friend's name" required/>
+  </div>
+</div>
+
+      <button class="auth-btn" onclick="register()">Create Account →</button>
+
+      <div class="auth-footer">
+        Already have an account? <a href="/login">Sign In</a>
+      </div>
+
+    </div>
+  </div>
+  <script src="/static/auth.js"></script>
+</body>
+</html>

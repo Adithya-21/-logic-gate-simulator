@@ -1,0 +1,204 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f0f1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+/* ── Navbar ── */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a4a;
+  padding: 14px 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 30px;
+}
+
+.nav-brand {
+  color: #7ee8fa;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-user {
+  color: #888;
+  font-size: 0.88rem;
+}
+
+.logout-btn {
+  padding: 8px 18px;
+  background: transparent;
+  border: 1.5px solid #f8565666;
+  color: #f85656;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #f85656;
+  color: #0f0f1a;
+}
+
+/* ── Main container ── */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #7ee8fa;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: #888;
+  margin-bottom: 28px;
+  font-size: 0.9rem;
+}
+
+/* ── Cards ── */
+.card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+h2 { font-size: 1.1rem; margin-bottom: 16px; color: #a0c4ff; }
+
+/* ── Gate Buttons ── */
+.gate-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gate-btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: 2px solid #3a3a6a;
+  background: #0f0f1a;
+  color: #e0e0e0;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gate-btn:hover, .gate-btn.selected {
+  background: #7ee8fa;
+  color: #0f0f1a;
+  border-color: #7ee8fa;
+}
+
+/* ── Toggle Inputs ── */
+.inputs {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid #3a3a6a;
+  background: #0f0f1a;
+  color: #aaa;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle.active {
+  background: #7ee8fa;
+  color: #0f0f1a;
+  border-color: #7ee8fa;
+}
+
+/* ── Simulate Button ── */
+.simulate-btn {
+  padding: 12px 36px;
+  background: linear-gradient(135deg, #7ee8fa, #a0c4ff);
+  color: #0f0f1a;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.simulate-btn:hover { opacity: 0.85; }
+
+/* ── Output ── */
+.output-display {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  background: #0f0f1a;
+  border: 1px solid #2a2a4a;
+}
+
+.output-display.high { color: #56f89c; border-color: #56f89c; }
+.output-display.low  { color: #f85656; border-color: #f85656; }
+
+canvas {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+/* ── Truth Table ── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+th, td {
+  padding: 10px 16px;
+  text-align: center;
+  border: 1px solid #2a2a4a;
+}
+
+th { background: #0f0f1a; color: #a0c4ff; }
+tr:nth-child(even) { background: #111128; }
+td.one  { color: #56f89c; font-weight: bold; }
+td.zero { color: #f85656; font-weight: bold; }
