@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
+from flask_session import Session
 import sqlite3
 import os
 import itertools
@@ -13,13 +14,21 @@ app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
 
-app.secret_key = os.environ.get('SECRET_KEY', 'logicgate_secret_key_2024')
-app.config['SESSION_COOKIE_SECURE'] = True
+# Session config
+app.secret_key = os.environ.get('SECRET_KEY', 'logicgate_secret_key_2024_xyz')
+app.config['SESSION_TYPE']            = 'filesystem'
+app.config['SESSION_FILE_DIR']        = '/tmp/flask_sessions'
+app.config['SESSION_PERMANENT']       = False
+app.config['SESSION_USE_SIGNER']      = True
+app.config['SESSION_COOKIE_SECURE']   = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+Session(app)
 CORS(app)
 bcrypt = Bcrypt(app)
 
-# Use /tmp on Render, local path for development
+# DB path
 if os.environ.get('RENDER'):
     DB_PATH = '/tmp/users.db'
 else:
@@ -27,6 +36,8 @@ else:
 
 def init_db():
     try:
+        # Create session directory
+        os.makedirs('/tmp/flask_sessions', exist_ok=True)
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -45,7 +56,7 @@ def init_db():
 @app.before_request
 def before_request():
     init_db()
-# ─── Auth ──────────────────────────────────────────────────
+    # ─── Auth ──────────────────────────────────────────────────
 @app.route('/')
 def home():
     if 'user' not in session:
@@ -80,7 +91,7 @@ def login():
 
     except Exception as e:
         return jsonify({'success': False, 'message': f'Login error: {str(e)}'})
-    @app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
         return render_template('register.html')
