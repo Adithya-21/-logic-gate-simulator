@@ -6,34 +6,45 @@ import os
 import itertools
 import random
 import re
-import math
 
-app = Flask(__name__, template_folder='../templates', static_folder='../static')
-app.secret_key = 'logicgate_secret_key_2024'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+app = Flask(__name__,
+            template_folder=os.path.join(BASE_DIR, 'templates'),
+            static_folder=os.path.join(BASE_DIR, 'static'))
+
+app.secret_key = os.environ.get('SECRET_KEY', 'logicgate_secret_key_2024')
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 CORS(app)
 bcrypt = Bcrypt(app)
 
-# Works on both local and Render
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'users.db') \
-          if os.path.exists(os.path.join(os.path.dirname(__file__), '..')) \
-          else '/tmp/users.db'
+# Use /tmp on Render, local path for development
+if os.environ.get('RENDER'):
+    DB_PATH = '/tmp/users.db'
+else:
+    DB_PATH = os.path.join(BASE_DIR, 'users.db')
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS users (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        username      TEXT UNIQUE NOT NULL,
-        email         TEXT UNIQUE NOT NULL,
-        password      TEXT NOT NULL,
-        secret_answer TEXT NOT NULL,
-        phone         TEXT NOT NULL
-    )''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS users (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT UNIQUE NOT NULL,
+            email         TEXT UNIQUE NOT NULL,
+            password      TEXT NOT NULL,
+            secret_answer TEXT NOT NULL,
+            phone         TEXT NOT NULL
+        )''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"DB init error: {e}")
 
-init_db()
-
+@app.before_request
+def before_request():
+    init_db()
 # ─── Auth ──────────────────────────────────────────────────
 @app.route('/')
 def home():
@@ -52,21 +63,24 @@ def login():
     if not all([email, password]):
         return jsonify({'success': False, 'message': 'All fields are required'})
 
-    conn = sqlite3.connect(DB_PATH)
-    c    = conn.cursor()
-    c.execute('SELECT username, password FROM users WHERE email = ?', (email,))
-    user = c.fetchone()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c    = conn.cursor()
+        c.execute('SELECT username, password FROM users WHERE email = ?', (email,))
+        user = c.fetchone()
+        conn.close()
 
-    if not user:
-        return jsonify({'success': False, 'message': 'Email not found'})
-    if not bcrypt.check_password_hash(user[1], password):
-        return jsonify({'success': False, 'message': 'Incorrect password'})
+        if not user:
+            return jsonify({'success': False, 'message': 'Email not found'})
+        if not bcrypt.check_password_hash(user[1], password):
+            return jsonify({'success': False, 'message': 'Incorrect password'})
 
-    session['user'] = user[0]
-    return jsonify({'success': True, 'username': user[0]})
+        session['user'] = user[0]
+        return jsonify({'success': True, 'username': user[0]})
 
-@app.route('/register', methods=['GET', 'POST'])
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Login error: {str(e)}'})
+    @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
         return render_template('register.html')
