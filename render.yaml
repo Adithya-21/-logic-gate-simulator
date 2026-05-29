@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: logic-gate-simulator
+    name: ece-digital-lab
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python api/index.py
+    startCommand: cd api && gunicorn index:app --bind 0.0.0.0:$PORT
     plan: free
