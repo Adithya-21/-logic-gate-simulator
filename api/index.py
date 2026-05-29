@@ -1,12 +1,13 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
-from flask_session import Session
 import sqlite3
 import os
 import itertools
 import random
 import re
+import jwt
+import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -14,18 +15,11 @@ app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
 
-# Session config
-app.secret_key = os.environ.get('SECRET_KEY', 'logicgate_secret_key_2024_xyz')
-app.config['SESSION_TYPE']            = 'filesystem'
-app.config['SESSION_FILE_DIR']        = '/tmp/flask_sessions'
-app.config['SESSION_PERMANENT']       = False
-app.config['SESSION_USE_SIGNER']      = True
 app.config['SESSION_COOKIE_SECURE']   = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-Session(app)
-CORS(app)
+SECRET_KEY = os.environ.get('SECRET_KEY', 'logicgate_jwt_secret_2024_xyz')
+CORS(app, supports_credentials=True)
 bcrypt = Bcrypt(app)
 
 # DB path
@@ -36,8 +30,6 @@ else:
 
 def init_db():
     try:
-        # Create session directory
-        os.makedirs('/tmp/flask_sessions', exist_ok=True)
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -56,12 +48,36 @@ def init_db():
 @app.before_request
 def before_request():
     init_db()
-    # ─── Auth ──────────────────────────────────────────────────
+
+# ── JWT helpers ────────────────────────────────────────────
+def create_token(username):
+    payload = {
+        'username': username,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+def verify_token(token):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        return payload.get('username')
+    except:
+        return None
+
+def get_current_user():
+    token = request.cookies.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
+    if token:
+        return verify_token(token)
+    return None
+
+# ── Auth Routes ────────────────────────────────────────────
 @app.route('/')
 def home():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    return render_template('index.html', username=session['user'])
+    token = request.cookies.get('token')
+    username = verify_token(token) if token else None
+    if not username:
+        return redirect('/login')
+    return render_template('index.html', username=username)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -86,11 +102,18 @@ def login():
         if not bcrypt.check_password_hash(user[1], password):
             return jsonify({'success': False, 'message': 'Incorrect password'})
 
-        session['user'] = user[0]
-        return jsonify({'success': True, 'username': user[0]})
+        token = create_token(user[0])
+        resp  = jsonify({'success': True, 'username': user[0], 'token': token})
+        resp.set_cookie('token', token,
+                        httponly=True,
+                        secure=True,
+                        samesite='None',
+                        max_age=7*24*60*60)
+        return resp
 
     except Exception as e:
         return jsonify({'success': False, 'message': f'Login error: {str(e)}'})
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
@@ -105,17 +128,16 @@ def register():
     if not all([username, email, phone, password, secret_answer]):
         return jsonify({'success': False, 'message': 'All fields are required'})
 
-    # ── Password Validation ──────────────────────────────
     if len(password) < 8:
         return jsonify({'success': False, 'message': 'Password must be at least 8 characters'})
     if not re.search(r'[A-Z]', password):
-        return jsonify({'success': False, 'message': 'Password must contain at least one uppercase letter (A-Z)'})
+        return jsonify({'success': False, 'message': 'Password must contain at least one uppercase letter'})
     if not re.search(r'[a-z]', password):
-        return jsonify({'success': False, 'message': 'Password must contain at least one lowercase letter (a-z)'})
+        return jsonify({'success': False, 'message': 'Password must contain at least one lowercase letter'})
     if not re.search(r'[0-9]', password):
-        return jsonify({'success': False, 'message': 'Password must contain at least one number (0-9)'})
+        return jsonify({'success': False, 'message': 'Password must contain at least one number'})
     if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>/?\\|`~]', password):
-        return jsonify({'success': False, 'message': 'Password must contain at least one special character e.g. !@#$%'})
+        return jsonify({'success': False, 'message': 'Password must contain at least one special character'})
 
     hashed_pw  = bcrypt.generate_password_hash(password).decode('utf-8')
     hashed_ans = bcrypt.generate_password_hash(secret_answer.lower()).decode('utf-8')
@@ -140,10 +162,10 @@ def forgot():
     email         = data.get('email')
     secret_answer = data.get('secret_answer')
     new_password  = data.get('new_password')
+
     if not all([email, secret_answer, new_password]):
         return jsonify({'success': False, 'message': 'All fields are required'})
 
-    # ── Password Validation ──────────────────────────────
     if len(new_password) < 8:
         return jsonify({'success': False, 'message': 'Password must be at least 8 characters'})
     if not re.search(r'[A-Z]', new_password):
@@ -164,7 +186,7 @@ def forgot():
         return jsonify({'success': False, 'message': 'Email not found'})
     if not bcrypt.check_password_hash(user[0], secret_answer.lower()):
         conn.close()
-        return jsonify({'success': False, 'message': 'Incorrect answer to secret question'})
+        return jsonify({'success': False, 'message': 'Incorrect answer'})
     hashed_pw = bcrypt.generate_password_hash(new_password).decode('utf-8')
     c.execute('UPDATE users SET password = ? WHERE email = ?', (hashed_pw, email))
     conn.commit()
@@ -173,10 +195,11 @@ def forgot():
 
 @app.route('/logout')
 def logout():
-    session.clear()
-    return redirect(url_for('login'))
+    resp = redirect('/login')
+    resp.delete_cookie('token')
+    return resp
 
-# ─── Gate Logic ────────────────────────────────────────────
+# ── Gate Logic ─────────────────────────────────────────────
 def evaluate_gate(gate, a, b=None):
     gate = gate.upper()
     if gate == "NOT":    return int(not a)
@@ -201,7 +224,8 @@ def generate_truth_table(gate):
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate():
-    if 'user' not in session:
+    user = get_current_user()
+    if not user:
         return jsonify({'error': 'Unauthorized'}), 401
     data   = request.json
     gate   = data.get('gate')
@@ -215,10 +239,11 @@ def evaluate():
         'truth_table': generate_truth_table(gate)
     })
 
-# ─── Number Converter ──────────────────────────────────────
+# ── Number Converter ───────────────────────────────────────
 @app.route('/convert', methods=['POST'])
 def convert():
-    if 'user' not in session:
+    user = get_current_user()
+    if not user:
         return jsonify({'error': 'Unauthorized'}), 401
     data      = request.json
     number    = data.get('number', '').strip()
@@ -231,7 +256,6 @@ def convert():
         decimal = str(decimal_val)
         steps   = {}
         hex_map = {10:'A',11:'B',12:'C',13:'D',14:'E',15:'F'}
-
         if from_base != '2':
             b_steps = []
             n = decimal_val
@@ -239,7 +263,6 @@ def convert():
                 b_steps.append({'dividend': n, 'quotient': n//2, 'remainder': n%2})
                 n = n // 2
             steps['to_binary'] = b_steps[::-1]
-
         if from_base != '8':
             o_steps = []
             n = decimal_val
@@ -247,61 +270,41 @@ def convert():
                 o_steps.append({'dividend': n, 'quotient': n//8, 'remainder': n%8})
                 n = n // 8
             steps['to_octal'] = o_steps[::-1]
-
         if from_base != '16':
             h_steps = []
             n = decimal_val
             while n > 0:
                 rem = n % 16
-                h_steps.append({
-                    'dividend':  n,
-                    'quotient':  n // 16,
-                    'remainder': hex_map.get(rem, str(rem))
-                })
+                h_steps.append({'dividend': n, 'quotient': n//16, 'remainder': hex_map.get(rem, str(rem))})
                 n = n // 16
             steps['to_hex'] = h_steps[::-1]
-
-        return jsonify({
-            'success':   True,
-            'input':     number.upper(),
-            'from_base': from_base,
-            'results':   {
-                'binary':  binary,
-                'octal':   octal,
-                'decimal': decimal,
-                'hex':     hexa
-            },
-            'steps': steps
-        })
+        return jsonify({'success': True, 'input': number.upper(), 'from_base': from_base,
+                        'results': {'binary': binary, 'octal': octal, 'decimal': decimal, 'hex': hexa},
+                        'steps': steps})
     except ValueError:
         return jsonify({'success': False, 'message': 'Invalid number for the selected base'})
 
-# ─── K-Map Simplifier ──────────────────────────────────────
+# ── K-Map ──────────────────────────────────────────────────
 @app.route('/kmap', methods=['POST'])
 def kmap():
-    if 'user' not in session:
+    user = get_current_user()
+    if not user:
         return jsonify({'error': 'Unauthorized'}), 401
     data       = request.json
     num_vars   = int(data.get('num_vars', 2))
     minterms   = data.get('minterms', [])
     dont_cares = data.get('dont_cares', [])
-
     try:
         total    = 2 ** num_vars
         all_ones = set(minterms) | set(dont_cares)
-
-        def to_bin(n, bits):
-            return format(n, f'0{bits}b')
-
+        def to_bin(n, bits): return format(n, f'0{bits}b')
         def combine(a, b):
-            diff = [(i, ca, cb) for i, (ca, cb) in enumerate(zip(a, b)) if ca != cb]
-            if len(diff) == 1 and '-' not in a and '-' not in b:
+            diff = [(i,ca,cb) for i,(ca,cb) in enumerate(zip(a,b)) if ca!=cb]
+            if len(diff)==1 and '-' not in a and '-' not in b:
                 return a[:diff[0][0]] + '-' + a[diff[0][0]+1:]
             return None
-
         prime_implicants = []
         current = {to_bin(m, num_vars): {m} for m in range(total) if m in all_ones}
-
         for _ in range(num_vars):
             next_round = {}
             used = set()
@@ -321,126 +324,72 @@ def kmap():
                     if any(m in minterms for m in covered):
                         prime_implicants.append((t, covered))
             current = next_round
-            if not next_round:
-                break
-
+            if not next_round: break
         vars_map = ['A','B','C','D'][:num_vars]
-
         def implicant_to_expr(imp):
             terms = []
             for i, ch in enumerate(imp):
-                if ch == '1':   terms.append(vars_map[i])
-                elif ch == '0': terms.append(f"NOT {vars_map[i]}")
+                if ch=='1':   terms.append(vars_map[i])
+                elif ch=='0': terms.append(f"NOT {vars_map[i]}")
             return ' AND '.join(terms) if terms else '1'
-
-        if not minterms:
-            simplified = '0'
-        elif len(minterms) == total:
-            simplified = '1'
+        if not minterms:             simplified = '0'
+        elif len(minterms) == total: simplified = '1'
         else:
             expr_parts = [implicant_to_expr(pi[0]) for pi in prime_implicants]
-            simplified = ' OR '.join(
-                f"({e})" if ' AND ' in e else e for e in expr_parts
-            ) if expr_parts else '0'
-
+            simplified = ' OR '.join(f"({e})" if ' AND ' in e else e for e in expr_parts) if expr_parts else '0'
         table = []
         for i in range(total):
-            row    = {}
+            row = {}
             binary = to_bin(i, num_vars)
-            for j, v in enumerate(vars_map):
-                row[v] = int(binary[j])
+            for j, v in enumerate(vars_map): row[v] = int(binary[j])
             row['Output'] = 1 if i in minterms else ('X' if i in dont_cares else 0)
             table.append(row)
-
-        return jsonify({
-            'success':          True,
-            'simplified':       simplified,
-            'prime_implicants': [{'pattern': pi[0], 'covers': list(pi[1])} for pi in prime_implicants],
-            'truth_table':      table,
-            'num_vars':         num_vars
-        })
+        return jsonify({'success': True, 'simplified': simplified,
+                        'prime_implicants': [{'pattern': pi[0], 'covers': list(pi[1])} for pi in prime_implicants],
+                        'truth_table': table, 'num_vars': num_vars})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-# ─── Code Converter ────────────────────────────────────────
+# ── Code Converter ─────────────────────────────────────────
 @app.route('/code-convert', methods=['POST'])
 def code_convert():
-    if 'user' not in session:
+    user = get_current_user()
+    if not user:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
     text = data.get('text', '')
     mode = data.get('mode', 'text-to-binary')
-
     try:
         if mode == 'text-to-binary':
-            result = []
-            for ch in text:
-                ascii_val = ord(ch)
-                result.append({
-                    'char':   ch,
-                    'ascii':  ascii_val,
-                    'binary': format(ascii_val, '08b'),
-                    'hex':    format(ascii_val, '02X')
-                })
+            result = [{'char': ch, 'ascii': ord(ch), 'binary': format(ord(ch),'08b'), 'hex': format(ord(ch),'02X')} for ch in text]
             return jsonify({'success': True, 'mode': mode, 'result': result})
-
         elif mode == 'binary-to-text':
             chunks = text.strip().split()
-            result = []
-            output_text = ''
+            result = []; output_text = ''
             for chunk in chunks:
-                if len(chunk) == 8 and all(c in '01' for c in chunk):
-                    ascii_val    = int(chunk, 2)
-                    ch           = chr(ascii_val)
-                    output_text += ch
-                    result.append({
-                        'binary': chunk,
-                        'ascii':  ascii_val,
-                        'char':   ch,
-                        'hex':    format(ascii_val, '02X')
-                    })
+                if len(chunk)==8 and all(c in '01' for c in chunk):
+                    ascii_val = int(chunk,2); ch = chr(ascii_val); output_text += ch
+                    result.append({'binary': chunk, 'ascii': ascii_val, 'char': ch, 'hex': format(ascii_val,'02X')})
                 else:
-                    return jsonify({'success': False,
-                                    'message': f'Invalid binary: {chunk}. Each group must be 8 bits.'})
-            return jsonify({'success': True, 'mode': mode,
-                            'result': result, 'output_text': output_text})
-
+                    return jsonify({'success': False, 'message': f'Invalid binary: {chunk}'})
+            return jsonify({'success': True, 'mode': mode, 'result': result, 'output_text': output_text})
         elif mode == 'text-to-hex':
-            result = []
-            for ch in text:
-                ascii_val = ord(ch)
-                result.append({
-                    'char':   ch,
-                    'ascii':  ascii_val,
-                    'hex':    format(ascii_val, '02X'),
-                    'binary': format(ascii_val, '08b')
-                })
+            result = [{'char': ch, 'ascii': ord(ch), 'hex': format(ord(ch),'02X'), 'binary': format(ord(ch),'08b')} for ch in text]
             return jsonify({'success': True, 'mode': mode, 'result': result})
-
         elif mode == 'hex-to-text':
-            chunks = text.strip().split()
-            result = []
-            output_text = ''
+            chunks = text.strip().split(); result = []; output_text = ''
             for chunk in chunks:
-                ascii_val    = int(chunk, 16)
-                ch           = chr(ascii_val)
-                output_text += ch
-                result.append({
-                    'hex':    chunk.upper(),
-                    'ascii':  ascii_val,
-                    'char':   ch,
-                    'binary': format(ascii_val, '08b')
-                })
-            return jsonify({'success': True, 'mode': mode,
-                            'result': result, 'output_text': output_text})
-
+                ascii_val = int(chunk,16); ch = chr(ascii_val); output_text += ch
+                result.append({'hex': chunk.upper(), 'ascii': ascii_val, 'char': ch, 'binary': format(ascii_val,'08b')})
+            return jsonify({'success': True, 'mode': mode, 'result': result, 'output_text': output_text})
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Conversion error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
-# ─── Quiz ──────────────────────────────────────────────────
+# ── Quiz ───────────────────────────────────────────────────
 @app.route('/quiz', methods=['POST'])
 def quiz():
-    if 'user' not in session:
+    user = get_current_user()
+    if not user:
         return jsonify({'error': 'Unauthorized'}), 401
     return jsonify({'success': True})
 
