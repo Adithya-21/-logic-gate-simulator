@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import sqlite3
@@ -6,8 +6,6 @@ import os
 import itertools
 import random
 import re
-import jwt
-import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -15,11 +13,12 @@ app = Flask(__name__,
             template_folder=os.path.join(BASE_DIR, 'templates'),
             static_folder=os.path.join(BASE_DIR, 'static'))
 
-app.config['SESSION_COOKIE_SECURE']   = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.secret_key = 'logicgate_secret_key_2024_xyz'
+app.config['SESSION_COOKIE_SECURE']   = False
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'logicgate_jwt_secret_2024_xyz')
-CORS(app, supports_credentials=True)
+CORS(app)
 bcrypt = Bcrypt(app)
 
 # DB path
@@ -49,35 +48,12 @@ def init_db():
 def before_request():
     init_db()
 
-# ── JWT helpers ────────────────────────────────────────────
-def create_token(username):
-    payload = {
-        'username': username,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-
-def verify_token(token):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-        return payload.get('username')
-    except:
-        return None
-
-def get_current_user():
-    token = request.cookies.get('token') or request.headers.get('Authorization', '').replace('Bearer ', '')
-    if token:
-        return verify_token(token)
-    return None
-
-# ── Auth Routes ────────────────────────────────────────────
+# ── Auth ───────────────────────────────────────────────────
 @app.route('/')
 def home():
-    token = request.cookies.get('token')
-    username = verify_token(token) if token else None
-    if not username:
+    if 'user' not in session:
         return redirect('/login')
-    return render_template('index.html', username=username)
+    return render_template('index.html', username=session['user'])
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -86,33 +62,22 @@ def login():
     data     = request.json
     email    = data.get('email')
     password = data.get('password')
-
     if not all([email, password]):
         return jsonify({'success': False, 'message': 'All fields are required'})
-
     try:
         conn = sqlite3.connect(DB_PATH)
         c    = conn.cursor()
         c.execute('SELECT username, password FROM users WHERE email = ?', (email,))
         user = c.fetchone()
         conn.close()
-
         if not user:
             return jsonify({'success': False, 'message': 'Email not found'})
         if not bcrypt.check_password_hash(user[1], password):
             return jsonify({'success': False, 'message': 'Incorrect password'})
-
-        token = create_token(user[0])
-        resp  = jsonify({'success': True, 'username': user[0], 'token': token})
-        resp.set_cookie('token', token,
-                        httponly=True,
-                        secure=True,
-                        samesite='None',
-                        max_age=7*24*60*60)
-        return resp
-
+        session['user'] = user[0]
+        return jsonify({'success': True, 'username': user[0]})
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Login error: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -124,10 +89,8 @@ def register():
     phone         = data.get('phone')
     password      = data.get('password')
     secret_answer = data.get('secret_answer')
-
     if not all([username, email, phone, password, secret_answer]):
         return jsonify({'success': False, 'message': 'All fields are required'})
-
     if len(password) < 8:
         return jsonify({'success': False, 'message': 'Password must be at least 8 characters'})
     if not re.search(r'[A-Z]', password):
@@ -138,10 +101,8 @@ def register():
         return jsonify({'success': False, 'message': 'Password must contain at least one number'})
     if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>/?\\|`~]', password):
         return jsonify({'success': False, 'message': 'Password must contain at least one special character'})
-
     hashed_pw  = bcrypt.generate_password_hash(password).decode('utf-8')
     hashed_ans = bcrypt.generate_password_hash(secret_answer.lower()).decode('utf-8')
-
     try:
         conn = sqlite3.connect(DB_PATH)
         c    = conn.cursor()
@@ -162,10 +123,8 @@ def forgot():
     email         = data.get('email')
     secret_answer = data.get('secret_answer')
     new_password  = data.get('new_password')
-
     if not all([email, secret_answer, new_password]):
         return jsonify({'success': False, 'message': 'All fields are required'})
-
     if len(new_password) < 8:
         return jsonify({'success': False, 'message': 'Password must be at least 8 characters'})
     if not re.search(r'[A-Z]', new_password):
@@ -176,7 +135,6 @@ def forgot():
         return jsonify({'success': False, 'message': 'Password must contain at least one number'})
     if not re.search(r'[!@#$%^&*()\-_=+\[\]{};:\'",.<>/?\\|`~]', new_password):
         return jsonify({'success': False, 'message': 'Password must contain at least one special character'})
-
     conn = sqlite3.connect(DB_PATH)
     c    = conn.cursor()
     c.execute('SELECT secret_answer FROM users WHERE email = ?', (email,))
@@ -195,9 +153,8 @@ def forgot():
 
 @app.route('/logout')
 def logout():
-    resp = redirect('/login')
-    resp.delete_cookie('token')
-    return resp
+    session.clear()
+    return redirect('/login')
 
 # ── Gate Logic ─────────────────────────────────────────────
 def evaluate_gate(gate, a, b=None):
@@ -224,26 +181,20 @@ def generate_truth_table(gate):
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate():
-    user = get_current_user()
-    if not user:
+    if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data   = request.json
     gate   = data.get('gate')
     a      = int(data.get('a', 0))
     b      = int(data.get('b', 0))
     result = evaluate_gate(gate, a) if gate.upper() == 'NOT' else evaluate_gate(gate, a, b)
-    return jsonify({
-        'gate':        gate.upper(),
-        'inputs':      {'A': a, 'B': b},
-        'output':      result,
-        'truth_table': generate_truth_table(gate)
-    })
+    return jsonify({'gate': gate.upper(), 'inputs': {'A': a, 'B': b},
+                    'output': result, 'truth_table': generate_truth_table(gate)})
 
 # ── Number Converter ───────────────────────────────────────
 @app.route('/convert', methods=['POST'])
 def convert():
-    user = get_current_user()
-    if not user:
+    if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data      = request.json
     number    = data.get('number', '').strip()
@@ -275,20 +226,20 @@ def convert():
             n = decimal_val
             while n > 0:
                 rem = n % 16
-                h_steps.append({'dividend': n, 'quotient': n//16, 'remainder': hex_map.get(rem, str(rem))})
+                h_steps.append({'dividend': n, 'quotient': n//16,
+                                 'remainder': hex_map.get(rem, str(rem))})
                 n = n // 16
             steps['to_hex'] = h_steps[::-1]
         return jsonify({'success': True, 'input': number.upper(), 'from_base': from_base,
-                        'results': {'binary': binary, 'octal': octal, 'decimal': decimal, 'hex': hexa},
-                        'steps': steps})
+                        'results': {'binary': binary, 'octal': octal,
+                                    'decimal': decimal, 'hex': hexa}, 'steps': steps})
     except ValueError:
         return jsonify({'success': False, 'message': 'Invalid number for the selected base'})
 
 # ── K-Map ──────────────────────────────────────────────────
 @app.route('/kmap', methods=['POST'])
 def kmap():
-    user = get_current_user()
-    if not user:
+    if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data       = request.json
     num_vars   = int(data.get('num_vars', 2))
@@ -336,7 +287,9 @@ def kmap():
         elif len(minterms) == total: simplified = '1'
         else:
             expr_parts = [implicant_to_expr(pi[0]) for pi in prime_implicants]
-            simplified = ' OR '.join(f"({e})" if ' AND ' in e else e for e in expr_parts) if expr_parts else '0'
+            simplified = ' OR '.join(
+                f"({e})" if ' AND ' in e else e for e in expr_parts
+            ) if expr_parts else '0'
         table = []
         for i in range(total):
             row = {}
@@ -345,7 +298,8 @@ def kmap():
             row['Output'] = 1 if i in minterms else ('X' if i in dont_cares else 0)
             table.append(row)
         return jsonify({'success': True, 'simplified': simplified,
-                        'prime_implicants': [{'pattern': pi[0], 'covers': list(pi[1])} for pi in prime_implicants],
+                        'prime_implicants': [{'pattern': pi[0], 'covers': list(pi[1])}
+                                             for pi in prime_implicants],
                         'truth_table': table, 'num_vars': num_vars})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -353,15 +307,16 @@ def kmap():
 # ── Code Converter ─────────────────────────────────────────
 @app.route('/code-convert', methods=['POST'])
 def code_convert():
-    user = get_current_user()
-    if not user:
+    if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
     text = data.get('text', '')
     mode = data.get('mode', 'text-to-binary')
     try:
         if mode == 'text-to-binary':
-            result = [{'char': ch, 'ascii': ord(ch), 'binary': format(ord(ch),'08b'), 'hex': format(ord(ch),'02X')} for ch in text]
+            result = [{'char': ch, 'ascii': ord(ch),
+                       'binary': format(ord(ch),'08b'),
+                       'hex': format(ord(ch),'02X')} for ch in text]
             return jsonify({'success': True, 'mode': mode, 'result': result})
         elif mode == 'binary-to-text':
             chunks = text.strip().split()
@@ -369,27 +324,34 @@ def code_convert():
             for chunk in chunks:
                 if len(chunk)==8 and all(c in '01' for c in chunk):
                     ascii_val = int(chunk,2); ch = chr(ascii_val); output_text += ch
-                    result.append({'binary': chunk, 'ascii': ascii_val, 'char': ch, 'hex': format(ascii_val,'02X')})
+                    result.append({'binary': chunk, 'ascii': ascii_val,
+                                   'char': ch, 'hex': format(ascii_val,'02X')})
                 else:
-                    return jsonify({'success': False, 'message': f'Invalid binary: {chunk}'})
-            return jsonify({'success': True, 'mode': mode, 'result': result, 'output_text': output_text})
+                    return jsonify({'success': False,
+                                    'message': f'Invalid binary: {chunk}'})
+            return jsonify({'success': True, 'mode': mode,
+                            'result': result, 'output_text': output_text})
         elif mode == 'text-to-hex':
-            result = [{'char': ch, 'ascii': ord(ch), 'hex': format(ord(ch),'02X'), 'binary': format(ord(ch),'08b')} for ch in text]
+            result = [{'char': ch, 'ascii': ord(ch),
+                       'hex': format(ord(ch),'02X'),
+                       'binary': format(ord(ch),'08b')} for ch in text]
             return jsonify({'success': True, 'mode': mode, 'result': result})
         elif mode == 'hex-to-text':
-            chunks = text.strip().split(); result = []; output_text = ''
+            chunks = text.strip().split()
+            result = []; output_text = ''
             for chunk in chunks:
                 ascii_val = int(chunk,16); ch = chr(ascii_val); output_text += ch
-                result.append({'hex': chunk.upper(), 'ascii': ascii_val, 'char': ch, 'binary': format(ascii_val,'08b')})
-            return jsonify({'success': True, 'mode': mode, 'result': result, 'output_text': output_text})
+                result.append({'hex': chunk.upper(), 'ascii': ascii_val,
+                               'char': ch, 'binary': format(ascii_val,'08b')})
+            return jsonify({'success': True, 'mode': mode,
+                            'result': result, 'output_text': output_text})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
 
 # ── Quiz ───────────────────────────────────────────────────
 @app.route('/quiz', methods=['POST'])
 def quiz():
-    user = get_current_user()
-    if not user:
+    if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     return jsonify({'success': True})
 
