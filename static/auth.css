@@ -21,7 +21,7 @@ body {
 }
 
 .auth-card {
-  background: #12121f;
+  background: #12121e;
   border: 1px solid #1e1e38;
   border-radius: 20px;
   padding: 40px 36px;
@@ -30,7 +30,7 @@ body {
   box-shadow: 0 0 60px #7ee8fa08;
 }
 
-/* ── Top section ── */
+/* ── Top Section ── */
 .auth-top {
   text-align: center;
   margin-bottom: 32px;
@@ -57,7 +57,7 @@ body {
 }
 
 .tagline {
-  color: #555;
+  color: #444;
   font-size: 0.88rem;
 }
 
@@ -68,7 +68,7 @@ body {
 
 .field-group label {
   display: block;
-  color: #888;
+  color: #777;
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 7px;
@@ -80,7 +80,7 @@ body {
   margin-left: 2px;
 }
 
-/* ── Input wrapper ── */
+/* ── Input Wrapper ── */
 .inp-wrap {
   position: relative;
   display: flex;
@@ -113,16 +113,15 @@ body {
 }
 
 .inp-wrap input::placeholder {
-  color: #333;
+  color: #2a2a4a;
 }
 
-/* ── Show/Hide password toggle ── */
+/* ── Eye Toggle ── */
 .eye-toggle {
   position: absolute;
   right: 13px;
   font-size: 16px;
   cursor: pointer;
-  opacity: 1;
   color: #ffffff;
   filter: brightness(2);
   transition: opacity 0.2s;
@@ -134,7 +133,7 @@ body {
   opacity: 0.7;
 }
 
-/* ── Phone row ── */
+/* ── Phone Row ── */
 .phone-row {
   display: flex;
   gap: 8px;
@@ -170,10 +169,10 @@ body {
 }
 
 .phone-row input::placeholder {
-  color: #333;
+  color: #2a2a4a;
 }
 
-/* ── Forgot password link ── */
+/* ── Forgot Row ── */
 .forgot-row {
   text-align: right;
   margin: -8px 0 18px;
@@ -189,7 +188,7 @@ body {
   text-decoration: underline;
 }
 
-/* ── Submit button ── */
+/* ── Auth Button ── */
 .auth-btn {
   width: 100%;
   padding: 13px;
@@ -212,12 +211,12 @@ body {
   transform: scale(0.99);
 }
 
-/* ── Footer links ── */
+/* ── Footer Links ── */
 .auth-footer {
   text-align: center;
   margin-top: 20px;
   font-size: 0.85rem;
-  color: #555;
+  color: #444;
 }
 
 .auth-footer a {
@@ -230,9 +229,9 @@ body {
   text-decoration: underline;
 }
 
-/* ── Error / Success boxes ── */
+/* ── Error / Success Boxes ── */
 .error-box {
-  background: #1f0a0a;
+  background: #1a0808;
   border: 1px solid #f8565644;
   color: #f85656;
   border-radius: 10px;
@@ -243,7 +242,7 @@ body {
 }
 
 .success-box {
-  background: #0a1f12;
+  background: #081a0e;
   border: 1px solid #56f89c44;
   color: #56f89c;
   border-radius: 10px;

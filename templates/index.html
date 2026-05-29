@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Logic Gate Simulator</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css"/>
 </head>
 <body>
 
@@ -17,61 +17,417 @@
     </div>
   </div>
 
-  <div class="container">
-    <h1>⚡ Logic Gate Simulator</h1>
-    <p class="subtitle">ECE Project | VLSI & Digital Logic</p>
-
-    <!-- Gate Selector -->
-    <div class="card">
-      <h2>Select Gate</h2>
-      <div class="gate-buttons">
-        <button onclick="selectGate('AND')"  class="gate-btn">AND</button>
-        <button onclick="selectGate('OR')"   class="gate-btn">OR</button>
-        <button onclick="selectGate('NOT')"  class="gate-btn">NOT</button>
-        <button onclick="selectGate('NAND')" class="gate-btn">NAND</button>
-        <button onclick="selectGate('NOR')"  class="gate-btn">NOR</button>
-        <button onclick="selectGate('XOR')"  class="gate-btn">XOR</button>
-        <button onclick="selectGate('XNOR')" class="gate-btn">XNOR</button>
-      </div>
-    </div>
-
-    <!-- Input Section -->
-    <div class="card" id="input-section">
-      <h2>Inputs for <span id="selected-gate-label">—</span></h2>
-      <div class="inputs">
-        <div class="input-group">
-          <label>Input A</label>
-          <div class="toggle-group">
-            <button onclick="setInput('a', 0)" id="a0" class="toggle active">0</button>
-            <button onclick="setInput('a', 1)" id="a1" class="toggle">1</button>
-          </div>
-        </div>
-        <div class="input-group" id="input-b-group">
-          <label>Input B</label>
-          <div class="toggle-group">
-            <button onclick="setInput('b', 0)" id="b0" class="toggle active">0</button>
-            <button onclick="setInput('b', 1)" id="b1" class="toggle">1</button>
-          </div>
-        </div>
-      </div>
-      <button onclick="simulate()" class="simulate-btn">▶ Simulate</button>
-    </div>
-
-    <!-- Output Section -->
-    <div class="card" id="output-section" style="display:none;">
-      <h2>Output</h2>
-      <div id="output-display" class="output-display"></div>
-      <canvas id="gateCanvas" width="300" height="160"></canvas>
-    </div>
-
-    <!-- Truth Table -->
-    <div class="card" id="truth-table-section" style="display:none;">
-      <h2>Truth Table</h2>
-      <div id="truth-table-container"></div>
-    </div>
-
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('gates',    this)">🔌 Gates</button>
+    <button class="tab-btn"        onclick="switchTab('converter',this)">🔢 Converter</button>
+    <button class="tab-btn"        onclick="switchTab('circuits', this)">⚙️ Circuits</button>
+    <button class="tab-btn"        onclick="switchTab('timing',   this)">📈 Timing</button>
+    <button class="tab-btn"        onclick="switchTab('symbols',  this)">🎨 Symbols</button>
+    <button class="tab-btn"        onclick="switchTab('flipflop', this)">🔄 Flip Flop</button>
+    <button class="tab-btn"        onclick="switchTab('kmap',     this)">📊 K-Map</button>
+    <button class="tab-btn"        onclick="switchTab('signal',   this)">🌊 Signal</button>
+    <button class="tab-btn"        onclick="switchTab('code',     this)">🖥️ Code</button>
+    <button class="tab-btn"        onclick="switchTab('quiz',     this)">🧠 Quiz</button>
   </div>
 
+  <div class="container">
+
+    <!-- ══════════════════ TAB 1: GATES ══════════════════ -->
+    <div id="tab-gates" class="tab-content active">
+      <h1>Logic Gate Simulator</h1>
+      <p class="subtitle">Select a gate, set inputs and simulate</p>
+      <div class="card">
+        <h2>Select Gate</h2>
+        <div class="gate-buttons">
+          <button onclick="selectGate('AND',  this)" class="gate-btn">AND</button>
+          <button onclick="selectGate('OR',   this)" class="gate-btn">OR</button>
+          <button onclick="selectGate('NOT',  this)" class="gate-btn">NOT</button>
+          <button onclick="selectGate('NAND', this)" class="gate-btn">NAND</button>
+          <button onclick="selectGate('NOR',  this)" class="gate-btn">NOR</button>
+          <button onclick="selectGate('XOR',  this)" class="gate-btn">XOR</button>
+          <button onclick="selectGate('XNOR', this)" class="gate-btn">XNOR</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Inputs for <span id="selected-gate-label">—</span></h2>
+        <div class="inputs">
+          <div class="input-group">
+            <label>Input A</label>
+            <div class="toggle-group">
+              <button onclick="setInput('a',0)" id="a0" class="toggle active">0</button>
+              <button onclick="setInput('a',1)" id="a1" class="toggle">1</button>
+            </div>
+          </div>
+          <div class="input-group" id="input-b-group">
+            <label>Input B</label>
+            <div class="toggle-group">
+              <button onclick="setInput('b',0)" id="b0" class="toggle active">0</button>
+              <button onclick="setInput('b',1)" id="b1" class="toggle">1</button>
+            </div>
+          </div>
+        </div>
+        <button onclick="simulate()" class="simulate-btn">▶ Simulate</button>
+      </div>
+      <div class="card" id="output-section" style="display:none;">
+        <h2>Output</h2>
+        <div id="output-display" class="output-display"></div>
+        <canvas id="gateCanvas" width="300" height="160"></canvas>
+      </div>
+      <div class="card" id="truth-table-section" style="display:none;">
+        <h2>Truth Table</h2>
+        <div id="truth-table-container"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 2: CONVERTER ══════════════════ -->
+    <div id="tab-converter" class="tab-content">
+      <h1>Number System Converter</h1>
+      <p class="subtitle">Convert between Binary · Octal · Decimal · Hex with step-by-step working</p>
+      <div class="card">
+        <h2>Select Input Base</h2>
+        <div class="base-selector">
+          <button class="base-btn active" onclick="selectBase('10',this)">🔟 Decimal<span>Base 10</span></button>
+          <button class="base-btn" onclick="selectBase('2', this)">🔢 Binary<span>Base 2</span></button>
+          <button class="base-btn" onclick="selectBase('8', this)">8️⃣ Octal<span>Base 8</span></button>
+          <button class="base-btn" onclick="selectBase('16',this)">🔠 Hex<span>Base 16</span></button>
+        </div>
+        <div class="expr-examples" style="margin-top:16px;">
+          <span>Examples:</span>
+          <button class="chip" onclick="setNumber('255')">255</button>
+          <button class="chip" onclick="setNumber('1010')">1010</button>
+          <button class="chip" onclick="setNumber('FF')">FF</button>
+          <button class="chip" onclick="setNumber('77')">77</button>
+          <button class="chip" onclick="setNumber('1024')">1024</button>
+        </div>
+        <div class="expr-input-row" style="margin-top:14px;">
+          <input type="text" id="number-input" placeholder="Enter number here..." style="text-transform:uppercase;"/>
+          <button onclick="convertNumber()" class="simulate-btn">▶ Convert</button>
+        </div>
+        <div class="error-box" id="conv-error"></div>
+      </div>
+      <div id="conv-results" style="display:none;">
+        <div class="conv-grid">
+          <div class="conv-card decimal-card">
+            <div class="conv-label">🔟 Decimal</div><div class="conv-label-sub">Base 10</div>
+            <div class="conv-value" id="res-decimal">—</div>
+            <button class="copy-btn" onclick="copyVal('res-decimal',this)">Copy</button>
+          </div>
+          <div class="conv-card binary-card">
+            <div class="conv-label">🔢 Binary</div><div class="conv-label-sub">Base 2</div>
+            <div class="conv-value" id="res-binary">—</div>
+            <button class="copy-btn" onclick="copyVal('res-binary',this)">Copy</button>
+          </div>
+          <div class="conv-card octal-card">
+            <div class="conv-label">8️⃣ Octal</div><div class="conv-label-sub">Base 8</div>
+            <div class="conv-value" id="res-octal">—</div>
+            <button class="copy-btn" onclick="copyVal('res-octal',this)">Copy</button>
+          </div>
+          <div class="conv-card hex-card">
+            <div class="conv-label">🔠 Hex</div><div class="conv-label-sub">Base 16</div>
+            <div class="conv-value" id="res-hex">—</div>
+            <button class="copy-btn" onclick="copyVal('res-hex',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="conv-steps" style="display:none;">
+        <h2>Step-by-Step Conversion</h2>
+        <div id="steps-container"></div>
+      </div>
+      <div class="card" id="bit-visualizer" style="display:none;">
+        <h2>Binary Bit Visualizer</h2>
+        <p style="color:#555;font-size:0.82rem;margin-bottom:14px;">Each bit position, its value and decimal contribution</p>
+        <div id="bit-display"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 3: CIRCUITS ══════════════════ -->
+    <div id="tab-circuits" class="tab-content">
+      <h1>Combinational Circuits</h1>
+      <p class="subtitle">Simulate real ECE circuits with truth tables</p>
+      <div class="card">
+        <h2>Select Circuit</h2>
+        <div class="gate-buttons">
+          <button class="gate-btn" onclick="selectCircuit('half-adder',this)">Half Adder</button>
+          <button class="gate-btn" onclick="selectCircuit('full-adder',this)">Full Adder</button>
+          <button class="gate-btn" onclick="selectCircuit('mux',       this)">2:1 MUX</button>
+          <button class="gate-btn" onclick="selectCircuit('demux',     this)">1:2 DEMUX</button>
+          <button class="gate-btn" onclick="selectCircuit('encoder',   this)">Encoder</button>
+          <button class="gate-btn" onclick="selectCircuit('decoder',   this)">Decoder</button>
+        </div>
+      </div>
+      <div class="card" id="circuit-inputs" style="display:none;">
+        <h2 id="circuit-title">—</h2>
+        <p id="circuit-desc" class="subtitle" style="text-align:left;margin-bottom:16px;"></p>
+        <div id="circuit-input-fields"></div>
+        <button onclick="simulateCircuit()" class="simulate-btn">▶ Simulate</button>
+      </div>
+      <div class="card" id="circuit-output" style="display:none;">
+        <h2>Output</h2>
+        <div id="circuit-result"></div>
+      </div>
+      <div class="card" id="circuit-table-section" style="display:none;">
+        <h2>Truth Table</h2>
+        <div id="circuit-truth-table"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 4: TIMING ══════════════════ -->
+    <div id="tab-timing" class="tab-content">
+      <h1>Timing Diagram Visualizer</h1>
+      <p class="subtitle">See how gate outputs change over time</p>
+      <div class="card">
+        <h2>Setup</h2>
+        <div class="timing-setup">
+          <div class="field-row">
+            <label>Gate</label>
+            <select id="timing-gate">
+              <option>AND</option><option>OR</option><option>NOT</option>
+              <option>NAND</option><option>NOR</option><option>XOR</option><option>XNOR</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Input A pattern</label>
+            <input type="text" id="timing-a" placeholder="e.g. 01010101" maxlength="8" value="01010101"/>
+          </div>
+          <div class="field-row" id="timing-b-row">
+            <label>Input B pattern</label>
+            <input type="text" id="timing-b" placeholder="e.g. 00110011" maxlength="8" value="00110011"/>
+          </div>
+        </div>
+        <button onclick="drawTiming()" class="simulate-btn">▶ Generate Diagram</button>
+      </div>
+      <div class="card" id="timing-output" style="display:none;">
+        <h2>Timing Diagram</h2>
+        <canvas id="timingCanvas" width="660" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 5: SYMBOLS ══════════════════ -->
+    <div id="tab-symbols" class="tab-content">
+      <h1>Circuit Symbol Library</h1>
+      <p class="subtitle">Visual reference of all ECE logic symbols</p>
+      <div class="card">
+        <h2>Filter by Category</h2>
+        <div class="gate-buttons">
+          <button class="gate-btn selected" onclick="filterSymbols('all',      this)">All</button>
+          <button class="gate-btn"          onclick="filterSymbols('basic',     this)">Basic Gates</button>
+          <button class="gate-btn"          onclick="filterSymbols('universal', this)">Universal</button>
+          <button class="gate-btn"          onclick="filterSymbols('arithmetic',this)">Arithmetic</button>
+          <button class="gate-btn"          onclick="filterSymbols('flip',      this)">Flip Flops</button>
+        </div>
+      </div>
+      <div id="symbols-grid" class="symbols-grid"></div>
+    </div>
+
+    <!-- ══════════════════ TAB 6: FLIP FLOP ══════════════════ -->
+    <div id="tab-flipflop" class="tab-content">
+      <h1>Flip Flop Simulator</h1>
+      <p class="subtitle">Simulate SR, JK, D and T flip flops with state tables</p>
+      <div class="card">
+        <h2>Select Flip Flop Type</h2>
+        <div class="gate-buttons">
+          <button class="gate-btn" onclick="selectFF('SR',this)">SR Flip Flop</button>
+          <button class="gate-btn" onclick="selectFF('JK',this)">JK Flip Flop</button>
+          <button class="gate-btn" onclick="selectFF('D', this)">D Flip Flop</button>
+          <button class="gate-btn" onclick="selectFF('T', this)">T Flip Flop</button>
+        </div>
+      </div>
+      <div class="card" id="ff-inputs" style="display:none;">
+        <h2 id="ff-title">—</h2>
+        <p id="ff-desc" class="subtitle" style="text-align:left;margin-bottom:16px;"></p>
+        <div class="inputs">
+          <div id="ff-input-fields"></div>
+          <div class="input-group">
+            <label>Current State (Q)</label>
+            <div class="toggle-group">
+              <button onclick="setFFInput('Q',0)" id="ffQ0" class="toggle active">0</button>
+              <button onclick="setFFInput('Q',1)" id="ffQ1" class="toggle">1</button>
+            </div>
+          </div>
+        </div>
+        <button onclick="simulateFF()" class="simulate-btn" style="margin-top:16px;">▶ Simulate</button>
+      </div>
+      <div class="card" id="ff-output" style="display:none;">
+        <h2>Next State Output</h2>
+        <div id="ff-result" class="circuit-outputs"></div>
+      </div>
+      <div class="card" id="ff-table-section" style="display:none;">
+        <h2>State Table</h2>
+        <div id="ff-truth-table"></div>
+      </div>
+      <div class="card" id="ff-info-section" style="display:none;">
+        <h2>How it Works</h2>
+        <div id="ff-info" style="color:#aaa;line-height:1.9;font-size:0.9rem;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 7: K-MAP ══════════════════ -->
+    <div id="tab-kmap" class="tab-content">
+      <h1>K-Map Simplifier</h1>
+      <p class="subtitle">Enter minterms to get the simplified Boolean expression</p>
+      <div class="card">
+        <h2>Setup</h2>
+        <div class="field-row" style="margin-bottom:20px;">
+          <label>Number of Variables</label>
+          <select id="kmap-vars" onchange="renderKmapGrid()">
+            <option value="2">2 Variables (A, B)</option>
+            <option value="3">3 Variables (A, B, C)</option>
+            <option value="4">4 Variables (A, B, C, D)</option>
+          </select>
+        </div>
+        <h2 style="margin-bottom:12px;">Click cells to toggle (0 → 1 → X → 0)</h2>
+        <div id="kmap-grid-container"></div>
+        <div style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;">
+          <div class="kmap-legend"><span class="kleg kleg-0">0</span> = Zero</div>
+          <div class="kmap-legend"><span class="kleg kleg-1">1</span> = Minterm</div>
+          <div class="kmap-legend"><span class="kleg kleg-x">X</span> = Don't Care</div>
+        </div>
+        <button onclick="simplifyKmap()" class="simulate-btn" style="margin-top:20px;">▶ Simplify</button>
+        <button onclick="clearKmap()" class="simulate-btn" style="margin-top:20px;margin-left:10px;background:#2a2a4a;color:#aaa;">✕ Clear</button>
+      </div>
+      <div class="card" id="kmap-result" style="display:none;">
+        <h2>Simplified Expression</h2>
+        <div id="kmap-simplified" class="kmap-expr"></div>
+        <div id="kmap-implicants" style="margin-top:16px;"></div>
+      </div>
+      <div class="card" id="kmap-table-section" style="display:none;">
+        <h2>Truth Table</h2>
+        <div id="kmap-truth-table"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 8: SIGNAL ══════════════════ -->
+    <div id="tab-signal" class="tab-content">
+      <h1>Signal Generator Visualizer</h1>
+      <p class="subtitle">Visualize sine, square, triangle and sawtooth waveforms</p>
+      <div class="card">
+        <h2>Signal Parameters</h2>
+        <div class="timing-setup">
+          <div class="field-row">
+            <label>Wave Type</label>
+            <select id="wave-type" onchange="generateSignal()">
+              <option value="sine">Sine Wave</option>
+              <option value="square">Square Wave</option>
+              <option value="triangle">Triangle Wave</option>
+              <option value="sawtooth">Sawtooth Wave</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Frequency: <span id="freq-val">2</span> Hz</label>
+            <input type="range" id="wave-freq" min="1" max="10" value="2"
+              oninput="document.getElementById('freq-val').textContent=this.value; generateSignal()"/>
+          </div>
+          <div class="field-row">
+            <label>Amplitude: <span id="amp-val">1.0</span></label>
+            <input type="range" id="wave-amp" min="1" max="10" value="5"
+              oninput="document.getElementById('amp-val').textContent=(this.value/5).toFixed(1); generateSignal()"/>
+          </div>
+          <div class="field-row">
+            <label>Phase: <span id="phase-val">0°</span></label>
+            <input type="range" id="wave-phase" min="0" max="360" value="0"
+              oninput="document.getElementById('phase-val').textContent=this.value+'°'; generateSignal()"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
+          <button onclick="addWave()" class="simulate-btn">+ Add Wave</button>
+          <button onclick="clearWaves()" class="simulate-btn" style="background:#2a2a4a;color:#aaa;">✕ Clear All</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Waveform Display</h2>
+        <canvas id="signalCanvas" width="680" height="300"></canvas>
+        <div id="wave-legend" style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;"></div>
+      </div>
+      <div class="card" id="signal-info-card">
+        <h2>Signal Properties</h2>
+        <div id="signal-props" class="signal-props"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 9: CODE CONVERTER ══════════════════ -->
+    <div id="tab-code" class="tab-content">
+      <h1>Text ↔ Binary ↔ ASCII Converter</h1>
+      <p class="subtitle">Convert text to binary, hex, ASCII and back</p>
+      <div class="card">
+        <h2>Conversion Mode</h2>
+        <div class="base-selector">
+          <button class="base-btn active" onclick="selectCodeMode('text-to-binary',this)">
+            Text → Binary<span>ABC to 01010101</span>
+          </button>
+          <button class="base-btn" onclick="selectCodeMode('binary-to-text',this)">
+            Binary → Text<span>01010101 to ABC</span>
+          </button>
+          <button class="base-btn" onclick="selectCodeMode('text-to-hex',this)">
+            Text → Hex<span>ABC to 41 42 43</span>
+          </button>
+          <button class="base-btn" onclick="selectCodeMode('hex-to-text',this)">
+            Hex → Text<span>41 42 43 to ABC</span>
+          </button>
+        </div>
+        <div class="expr-examples" style="margin-top:16px;">
+          <span>Examples:</span>
+          <button class="chip" onclick="setCodeInput('Hello')">Hello</button>
+          <button class="chip" onclick="setCodeInput('ECE')">ECE</button>
+          <button class="chip" onclick="setCodeInput('01001000 01101001')">01001000 01101001</button>
+          <button class="chip" onclick="setCodeInput('48 69')">48 69</button>
+        </div>
+        <div class="expr-input-row" style="margin-top:14px;">
+          <input type="text" id="code-input" placeholder="Enter text or binary here..."/>
+          <button onclick="convertCode()" class="simulate-btn">▶ Convert</button>
+        </div>
+        <div class="error-box" id="code-error"></div>
+      </div>
+      <div class="card" id="code-output-card" style="display:none;">
+        <h2>Result</h2>
+        <div id="code-output-text" class="code-output-text"></div>
+        <button class="copy-btn" style="margin-top:12px;" onclick="copyCodeOutput()">Copy Result</button>
+      </div>
+      <div class="card" id="code-table-card" style="display:none;">
+        <h2>Character Breakdown</h2>
+        <div id="code-table"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TAB 10: QUIZ ══════════════════ -->
+    <div id="tab-quiz" class="tab-content">
+      <h1>ECE Quiz Mode</h1>
+      <p class="subtitle">Test your digital logic knowledge</p>
+      <div class="card" id="quiz-start-card">
+        <h2>Select Difficulty Level</h2>
+        <div class="level-buttons">
+          <button class="level-btn" onclick="selectLevel('basic',   this)">🟢 Basic<span>Fundamental gates & logic</span></button>
+          <button class="level-btn" onclick="selectLevel('moderate',this)">🟡 Moderate<span>Circuits & Boolean algebra</span></button>
+          <button class="level-btn" onclick="selectLevel('advanced',this)">🔴 Advanced<span>Complex circuits & theorems</span></button>
+        </div>
+        <button onclick="startQuiz()" class="simulate-btn" style="margin-top:24px;" id="start-quiz-btn" disabled>
+          🧠 Start Quiz — 10 Questions · 15s Each
+        </button>
+      </div>
+      <div id="quiz-area" style="display:none;">
+        <div class="card" id="quiz-progress-card">
+          <div class="quiz-top-bar">
+            <span id="quiz-progress-text" style="color:#888;font-size:0.85rem;">Question 1 of 10</span>
+            <div class="timer-box">⏱ <span id="quiz-timer">15</span>s</div>
+          </div>
+          <div class="quiz-progress-bar"><div id="quiz-progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="card" id="quiz-question-card">
+          <div id="quiz-level-badge" class="quiz-level-badge"></div>
+          <h2 id="quiz-question" style="margin-top:10px;line-height:1.5;"></h2>
+          <div id="quiz-options" class="quiz-options"></div>
+          <div class="explanation-box" id="quiz-explanation" style="display:none;"></div>
+          <button onclick="nextQuestion()" class="simulate-btn" id="quiz-next" style="display:none;margin-top:16px;">Next →</button>
+        </div>
+      </div>
+      <div class="card" id="quiz-result-card" style="display:none;">
+        <h2>Quiz Complete! 🎉</h2>
+        <div id="quiz-score-display" class="score-display"></div>
+        <button onclick="resetQuiz()" class="simulate-btn" style="margin-top:24px;">🔄 Try Again</button>
+      </div>
+    </div>
+
+  </div><!-- end container -->
   <script src="/static/script.js"></script>
 </body>
 </html>
